@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
-build.sh
-run.sh
+./scripts/build.sh
+./scripts/run.sh
