@@ -18,6 +18,12 @@
             "type": "shell",
             "command": "make && qemu-system-i386 -fda build/main_floppy.img",
             "problemMatcher": []
+        },
+        {
+            "label": "clean",
+            "type": "shell",
+            "command": "make clean",
+            "problemMatcher": []
         }
     ]
 }

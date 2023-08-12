@@ -4,7 +4,7 @@ org 0x7C00
 bits 16
 
 
-%define ENDL 0x0D, 0x0A ; Newline character
+%define ENDL `\r\n` ; Newline characters
 
 
 start:
@@ -68,4 +68,4 @@ msg_hello: db 'Hello, world!', ENDL, 0
 ; Our sector is 512 bytes, so we need to pad it with 510-($-$$) bytes of 0s
 times 510-($-$$) db 0
 ; The last two bytes are the magic number that BIOS looks for to identify a boot sector
-dw 0AA55h
+dw 0xAA55
