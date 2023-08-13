@@ -26,7 +26,7 @@ The data registers can be used to store data and addresses. They can also be use
 - 16 bits: AX, BX, CX, DX
 - 8 bits: AH, AL, BH, BL, CH, CL, DH, DL
 
-The "H" and "L" suffixes are used to access the high and low bytes of the respective 16-bit registers.
+The "H" and "L" suffixes are used to access the high and low 8 bits of the respective 16-bit registers.
 
 The "E" prefix is used to access the 32-bit registers.
 
