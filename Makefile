@@ -3,11 +3,16 @@
 #
 
 ASM=nasm
+CC=gcc
 
 SRC_DIR=src
+TOOLS_DIR=tools
 BUILD_DIR=build
+TEST_DIR=test
 
-.PHONY: all floppy_image kernel bootloader clean always
+.PHONY: all floppy_image kernel bootloader tools_fat clean always
+
+all: floppy_image tools_fat
 
 #
 # Floppy image
@@ -20,6 +25,7 @@ $(BUILD_DIR)/main_floppy.img: bootloader kernel
 	mkfs.fat -F 12 -n "MNOS" $(BUILD_DIR)/main_floppy.img
 	dd if=$(BUILD_DIR)/bootloader.bin of=$(BUILD_DIR)/main_floppy.img conv=notrunc
 	mcopy -i $(BUILD_DIR)/main_floppy.img $(BUILD_DIR)/kernel.bin "::kernel.bin"
+	mcopy -i $(BUILD_DIR)/main_floppy.img $(TEST_DIR)/test.txt "::test.txt"
 
 #
 # Bootloader
@@ -38,6 +44,16 @@ kernel: $(BUILD_DIR)/kernel.bin
 
 $(BUILD_DIR)/kernel.bin: always
 	$(ASM) $(SRC_DIR)/kernel/main.asm -f bin -o $(BUILD_DIR)/kernel.bin
+
+#
+# Tools
+#
+
+tools_fat: $(BUILD_DIR)/tools/fat
+
+$(BUILD_DIR)/tools/fat: always $(TOOLS_DIR)/fat/fat.c
+	mkdir -p $(BUILD_DIR)/tools
+	$(CC) -g -o $(BUILD_DIR)/tools/fat $(TOOLS_DIR)/fat/fat.c
 
 #
 # Always
