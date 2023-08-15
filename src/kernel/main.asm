@@ -13,7 +13,7 @@ main:
     mov si, msg_hello
     call puts
 
-.halt
+.halt:
     cli
     hlt
 

@@ -107,34 +107,34 @@ start:
     mov bx, buffer              ; bx = buffer address
     call disk_read              ; Read the root directory
 
-    ; Search for kernel.bin
+    ; Search for stage2.bin
     xor bx, bx                  ; bx = 0
     mov di, buffer              ; di = buffer address
 
-.search_kernel:
-    mov si, file_kernel_bin     ; si = file name
+.search_stage2:
+    mov si, file_stage2_bin     ; si = file name
     mov cx, 11                  ; cx = file name length
     push di
     repe cmpsb                  ; Compare the file name in the root directory with the file name we're looking for
     pop di
-    je .found_kernel
+    je .found_stage2
 
     add di, 32                  ; di += 32 (size of a directory entry)
     inc bx                      ; bx += 1
     cmp bx, [bpb_root_entries]  ; If bx == root_entries, we've searched the entire root directory
-    jl .search_kernel           ; If bx < root_entries, search the next directory entry
+    jl .search_stage2           ; If bx < root_entries, search the next directory entry
 
-    ; Kernel not found
-    jmp kernel_not_found_error
+    ; Stage 2 not found
+    jmp stage2_not_found_error
 
     ; Halt the processor
     cli
     hlt
 
-.found_kernel:
-    ; di points to the directory entry of kernel.bin
-    mov ax, [di+0x1A]           ; ax = starting cluster of kernel.bin
-    mov [kernel_cluster], ax    ; Save the starting cluster of kernel.bin
+.found_stage2:
+    ; di points to the directory entry of stage2.bin
+    mov ax, [di+0x1A]           ; ax = starting cluster of stage2.bin
+    mov [stage2_cluster], ax    ; Save the starting cluster of stage2.bin
 
     ; Read the FAT
     mov ax, [bpb_reserved]      ; ax = reserved_sectors
@@ -143,16 +143,16 @@ start:
     mov dl, [ebpb_drive]        ; dl = drive number
     call disk_read              ; Read the FAT
 
-    ; Read the kernel and process FAT entries
-    mov bx, KERNEL_LOAD_SEGMENT ; bx = segment to load the kernel into
-    mov es, bx                  ; es = segment to load the kernel into
-    mov bx, KERNEL_LOAD_OFFSET  ; bx = offset to load the kernel into
+    ; Read the stage2 and process FAT entries
+    mov bx, STAGE2_LOAD_SEGMENT ; bx = segment to load the stage2 into
+    mov es, bx                  ; es = segment to load the stage2 into
+    mov bx, STAGE2_LOAD_OFFSET  ; bx = offset to load the stage2 into
 
-.load_kernel:
-    mov ax, [kernel_cluster]    ; ax = current cluster
+.load_stage2:
+    mov ax, [stage2_cluster]    ; ax = current cluster
 
     ; TODO: Fix hardcoded value
-    add ax, 31                  ; first cluster = (kernel_cluster - 2) * sectors_per_cluster + start_sector
+    add ax, 31                  ; first cluster = (stage2_cluster - 2) * sectors_per_cluster + start_sector
                                 ; start_sector = reserved_sectors + sectors_per_fat * number_of_fats + root_dir_sectors
                                 ;              = 1 + 9 * 2 + 14 = 33
     mov cl, 1
@@ -162,7 +162,7 @@ start:
     add bx, [bpb_bytes]         ; bx += bytes_per_sector
 
     ; Compute the next cluster
-    mov ax, [kernel_cluster]    ; ax = current cluster
+    mov ax, [stage2_cluster]    ; ax = current cluster
     mov cx, 3
     mul cx                      ; ax = current cluster * 3
     mov cx, 2
@@ -186,18 +186,18 @@ start:
     cmp ax, 0x0FF8             ; If ax >= 0x0FF8, the cluster is the last cluster in the file
     jae .read_finish
 
-    mov [kernel_cluster], ax    ; Save the next cluster
-    jmp .load_kernel
+    mov [stage2_cluster], ax    ; Save the next cluster
+    jmp .load_stage2
 
 .read_finish:
-    ; Jump to the kernel
+    ; Jump to the stage2
     mov dl, [ebpb_drive]        ; dl = drive number
 
-    mov ax, KERNEL_LOAD_SEGMENT ; ax = segment to load the kernel into
-    mov ds, ax                  ; ds = segment to load the kernel into
-    mov es, ax                  ; es = segment to load the kernel into
+    mov ax, STAGE2_LOAD_SEGMENT ; ax = segment to load the stage2 into
+    mov ds, ax                  ; ds = segment to load the stage2 into
+    mov es, ax                  ; es = segment to load the stage2 into
 
-    jmp KERNEL_LOAD_SEGMENT:KERNEL_LOAD_OFFSET
+    jmp STAGE2_LOAD_SEGMENT:STAGE2_LOAD_OFFSET
 
     cli
     hlt
@@ -212,8 +212,8 @@ floppy_error:
     call puts
     jmp wait_key_and_reboot
 
-kernel_not_found_error:
-    mov si, msg_kernel_not_found
+stage2_not_found_error:
+    mov si, msg_stage2_not_found
     call puts
     jmp wait_key_and_reboot
 
@@ -362,13 +362,13 @@ disk_reset:
 msg_loading:              db 'Loading...', ENDL, 0
 
 msg_read_failed:          db 'Read from disk failed!', ENDL, 0
-msg_kernel_not_found:     db 'KERNEL.BIN not found!', ENDL, 0
+msg_stage2_not_found:     db 'STAGE2.BIN not found!', ENDL, 0
 
-file_kernel_bin:          db 'KERNEL  BIN'
-kernel_cluster:           dw 0
+file_stage2_bin:          db 'STAGE2  BIN'
+stage2_cluster:           dw 0
 
-KERNEL_LOAD_SEGMENT       equ 0x2000
-KERNEL_LOAD_OFFSET        equ 0x0000
+STAGE2_LOAD_SEGMENT       equ 0x2000
+STAGE2_LOAD_OFFSET        equ 0x0000
 
 ; $ = memory offset of current line in bytes, $$ = memory offset of current segment
 ; Our sector is 512 bytes, so we need to pad it with 510-($-$$) bytes of 0s
