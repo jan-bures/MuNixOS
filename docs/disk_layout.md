@@ -31,7 +31,7 @@ are numbered starting from 1.
 
 The following image shows the physical layout:
 
-![Disk layout](/images/cylinder_head_sector.png)
+![Disk layout](images/cylinder_head_sector.png)
 
 ## LBA (Logical Block Addressing)
 
